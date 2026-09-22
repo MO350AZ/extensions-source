@@ -12,9 +12,6 @@ keiyoushi {
 
     source {
         lang = "all"
-
-        baseUrl {
-            custom("http://127.0.0.1:8124")
-        }
+        baseUrl = "https://xianscan.local"
     }
 }
