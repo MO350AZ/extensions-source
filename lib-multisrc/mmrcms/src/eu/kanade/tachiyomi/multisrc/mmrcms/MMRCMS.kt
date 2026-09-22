@@ -13,8 +13,8 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
-import eu.kanade.tachiyomi.util.asJsoup
 import keiyoushi.lib.i18n.Intl
+import keiyoushi.utils.asJsoup
 import keiyoushi.utils.parseAs
 import keiyoushi.utils.tryParse
 import kotlinx.coroutines.CoroutineScope
@@ -88,30 +88,13 @@ abstract class MMRCMS : HttpSource() {
 
     protected open fun popularMangaNextPageSelector(): String? = searchMangaNextPageSelector()
 
-    /**
-     * A cache of all titles that have already appeared in latest updates.
-     */
-    private val latestTitles = mutableSetOf<String>()
-
     override fun latestUpdatesRequest(page: Int) = GET("$baseUrl/latest-release?page=$page", headers)
 
     override fun latestUpdatesParse(response: Response): MangasPage {
         val document = response.asJsoup()
-
-        if (response.request.url.queryParameter("page") == "1") {
-            latestTitles.clear()
-        }
-
-        val manga = document.select(latestUpdatesSelector()).mapNotNull {
-            val item = latestUpdatesFromElement(it)
-
-            if (latestTitles.contains(item.url)) {
-                null
-            } else {
-                latestTitles.add(item.url)
-                item
-            }
-        }
+        val manga = document.select(latestUpdatesSelector())
+            .map { latestUpdatesFromElement(it) }
+            .distinctBy { it.url }
         val hasNextPage = latestUpdatesNextPageSelector()?.let {
             document.selectFirst(it) != null
         } ?: false
